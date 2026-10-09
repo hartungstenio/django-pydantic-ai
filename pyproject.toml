@@ -1,0 +1,233 @@
+[project]
+name = "django-pydantic-ai"
+description = "Django integrations for Pydantic AI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "Christian Hartung", email = "6785871+hartungstenio@users.noreply.github.com" },
+]
+keywords = ["django", "pydantic-ai"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Web Environment",
+  "Framework :: Django",
+  "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6.0",
+  "Framework :: Django :: 6.1",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Internet :: WWW/HTTP",
+  "Typing :: Typed",
+]
+dependencies = [
+  "django (>=5.2)",
+  "pydantic-ai-slim",
+  "typing-extensions; python_version < '3.12'",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/hartungstenio/django-pydantic-ai#readme"
+Issues = "https://github.com/hartungstenio/django-pydantic-ai/issues"
+Source = "https://github.com/hartungstenio/django-pydantic-ai"
+
+[project.optional-dependencies]
+dmr = ["django-modern-rest"]
+drf = ["djangorestframework"]
+ninja = ["django-ninja"]
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-deadfixtures",
+  "pytest-django",
+  { include-group = "types" },
+]
+types = [
+  "django-stubs",
+  "djangorestframework-stubs",
+  "mypy",
+  "pyrefly",
+]
+
+[build-system]
+requires = ["hatch-vcs", "hatchling"]
+build-backend = "hatchling.build"
+
+[tool.coverage.run]
+source_pkgs = ["django_pydantic_ai", "tests"]
+branch = true
+parallel = true
+
+[tool.coverage.paths]
+django_pydantic_ai = ["src/django_pydantic_ai", "*/django-pydantic-ai/src/django_pydantic_ai"]
+tests = ["tests", "*/django-pydantic-ai/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.django-stubs]
+django_settings_module = "testproj.settings"
+
+[tool.hatch]
+requires-hatch = ">=1.18.0"
+
+[tool.hatch.version]
+source = "vcs"
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+[tool.hatch.envs.default]
+dependency-groups = ["dev"]
+features = ["dmr", "drf", "ninja"]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[tool.hatch.envs.hatch-check-types]
+dependency-groups = ["types"]
+features = ["dmr", "drf", "ninja"]
+
+[tool.hatch.envs.hatch-check-types.scripts]
+check = [
+  "pyrefly check{env:HATCH_CHECK_TYPES_ARGS:} {args}",
+  "mypy {args}",
+]
+
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+  "pytest-asyncio",
+  "pytest-django",
+]
+features = ["dmr", "drf", "ninja"]
+
+[tool.hatch.envs.hatch-test.overrides]
+matrix.django.dependencies = [
+  { value = "django>=5.2,<5.3", if = ["5.2"] },
+  { value = "django>=6.0,<6.1", if = ["6.0"] },
+  { value = "django>=6.1,<6.2", if = ["6.1"] },
+]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+django = ["5.2"]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+django = ["6.0", "6.1"]
+python = ["3.12", "3.13", "3.14"]
+
+[tool.hatch.envs.hatch-static-analysis]
+config-path = "none"
+dependencies = ["ruff"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+enable_error_code = "deprecated"
+plugins = ["mypy_django_plugin.main"]
+
+[tool.pyrefly]
+project-includes = ["src"]
+preset = "strict"
+min-severity = "ignore"
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+DJANGO_SETTINGS_MODULE = "testproj.settings"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+  "ERA",
+  "ANN",
+  "ASYNC",
+  "S",
+  "BLE",
+  "FBT",
+  "B",
+  "A",
+  "COM818",
+  "C4",
+  "DTZ",
+  "T10",
+  "DJ",
+  "EM",
+  "EXE",
+  "INT",
+  "ISC",
+  "ICN",
+  "LOG",
+  "G",
+  "PIE",
+  "T20",
+  "PYI",
+  "PT",
+  "RSE",
+  "RET",
+  "SLF",
+  "SIM",
+  "SLOT",
+  "TID",
+  "TD",
+  "TC",
+  "PTH",
+  "FLY",
+  "I",
+  "C90",
+  "N",
+  "PERF",
+  "E",
+  "W",
+  "D",
+  "F",
+  "PGH",
+  "PL",
+  "UP",
+  "FURB",
+  "RUF",
+  "TRY",
+]
+typing-modules = ["django_pydantic_ai._compat"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.ruff.lint.per-file-ignores]
+"*/models.py" = ["D106"]
+"*/migrations/*.py" = ["D", "RUF012"]
+"tests/*.py" = ["D", "S101"]
+
+[tool.ruff.lint.flake8-self]
+ignore-names = ["_meta"]
