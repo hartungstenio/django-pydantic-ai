@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-ast
+      - id: fix-byte-order-marker
+      - id: check-json
+        exclude: "^\\.vscode/"
+      - id: check-symlinks
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: forbid-new-submodules
+      - id: no-commit-to-branch
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/adamchainz/django-upgrade
+    rev: "1.33.0"
+    hooks:
+      - id: django-upgrade
+        args: [--target-version, "6.1"]
