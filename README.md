@@ -29,11 +29,12 @@ The package depends on Pydantic AI and Pydantic AI Harness; pip installs them al
 
 ## Django Setup
 
-Add the memory app to `INSTALLED_APPS`:
+Add the apps you use to `INSTALLED_APPS`:
 
 ```python
 INSTALLED_APPS = [
     # Your other Django apps...
+    "django_pydantic_ai.conversations",
     "django_pydantic_ai.memory",
 ]
 ```
@@ -70,6 +71,24 @@ result = await agent.run("Remember that my preferred language is Portuguese.")
 ```
 
 The `Memory` capability injects the main memory notebook into agent context and provides tools for writing, reading, deleting, and searching memory files. Its default in-memory store is process-local; pass `DjangoModelStore` to persist data in Django's database across runs.
+
+## Persist Conversations
+
+The conversations app stores the JSON representation of a Pydantic AI `Conversation`. Use `ConversationTypeAdapter` to prepare an instance for storage, and retrieve it by its conversation ID:
+
+```python
+from pydantic_ai.conversation import ConversationTypeAdapter
+
+from django_pydantic_ai.conversations.models import Conversation
+
+conversation = result.conversation
+conversation_data = ConversationTypeAdapter.dump_python(conversation, mode="json")
+usage = conversation_data.pop("usage")
+stored_conversation = Conversation.objects.create(**conversation_data, **usage)
+restored_conversation = Conversation.objects.get_conversation(conversation.conversation_id)
+```
+
+Token counters and other stable usage values are stored in individual columns, so they can be read directly (`stored_conversation.input_tokens`) or queried in the database (`Conversation.objects.filter(input_tokens__gte=1000)`). Additional usage details remain in a JSON field. The manager reconstructs the complete Pydantic AI `Conversation` with its accumulated usage.
 
 ## Store Behavior
 
