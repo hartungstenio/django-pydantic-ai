@@ -2,6 +2,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from asgiref.sync import async_to_sync
 from django.db import IntegrityError
 from pydantic_ai.conversation import Conversation as PydanticConversation
 from pydantic_ai.conversation import ConversationTypeAdapter
@@ -44,6 +45,32 @@ class TestConversationManager:
         assert stored.input_tokens == conversation.usage.input_tokens
         assert stored.output_tokens == conversation.usage.output_tokens
         assert stored.details == {"custom": 2}
+
+    @pytest.mark.django_db
+    def test_save_conversation_creates_and_updates_record(self) -> None:
+        initial = PydanticConversation(conversation_id="save-sync", usage=RunUsage(input_tokens=10))
+        stored = Conversation.objects.save_conversation(initial)
+
+        updated = PydanticConversation(conversation_id="save-sync", usage=RunUsage(input_tokens=20))
+        updated_stored = Conversation.objects.save_conversation(updated)
+
+        assert updated_stored.pk == stored.pk
+        assert updated_stored.input_tokens == updated.usage.input_tokens
+        assert Conversation.objects.count() == 1
+        assert Conversation.objects.get_conversation("save-sync") == updated
+
+    @pytest.mark.django_db
+    def test_asave_conversation_creates_and_updates_record(self) -> None:
+        initial = PydanticConversation(conversation_id="save-async", usage=RunUsage(input_tokens=10))
+        stored = async_to_sync(Conversation.objects.asave_conversation)(initial)
+
+        updated = PydanticConversation(conversation_id="save-async", usage=RunUsage(input_tokens=20))
+        updated_stored = async_to_sync(Conversation.objects.asave_conversation)(updated)
+
+        assert updated_stored.pk == stored.pk
+        assert updated_stored.input_tokens == updated.usage.input_tokens
+        assert Conversation.objects.count() == 1
+        assert Conversation.objects.get_conversation("save-async") == updated
 
     @pytest.mark.django_db
     def test_usage_fields_can_be_filtered_in_database(self) -> None:

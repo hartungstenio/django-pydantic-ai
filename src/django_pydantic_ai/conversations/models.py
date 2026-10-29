@@ -16,6 +16,26 @@ from pydantic_ai.usage import RunUsage
 class ConversationManager(models.Manager["Conversation"]):
     """Retrieve Pydantic AI conversations from persistent storage."""
 
+    def _get_conversation_defaults(self, conversation: PydanticConversation) -> dict[str, object]:
+        """Return model field values for a Pydantic AI conversation.
+
+        Args:
+            conversation: Conversation whose state should be persisted.
+
+        Returns:
+            Values to create or update on the Django conversation model.
+        """
+        serialized = ConversationTypeAdapter.dump_python(conversation, mode="json")
+        model_field_names = {field.name for field in self.model._meta.concrete_fields}
+        defaults: dict[str, object] = {
+            "messages": serialized["messages"],
+            "deferred_tool_requests": serialized["deferred_tool_requests"],
+        }
+        for field in fields(RunUsage):
+            if field.name in model_field_names:
+                defaults[field.name] = getattr(conversation.usage, field.name)
+        return defaults
+
     def get_conversation(self, conversation_id: str) -> PydanticConversation:
         """Return the Pydantic AI conversation identified by its ID.
 
@@ -45,6 +65,38 @@ class ConversationManager(models.Manager["Conversation"]):
                 "deferred_tool_requests": instance.deferred_tool_requests,
             }
         )
+
+    def save_conversation(self, conversation: PydanticConversation) -> Conversation:
+        """Create or update a stored conversation by its Pydantic AI ID.
+
+        Args:
+            conversation: Conversation whose state should be persisted.
+
+        Returns:
+            The stored Django conversation.
+        """
+        instance, _ = self.update_or_create(
+            conversation_id=conversation.conversation_id,
+            defaults=self._get_conversation_defaults(conversation),
+        )
+        return instance
+
+    async def asave_conversation(self, conversation: PydanticConversation) -> Conversation:
+        """Asynchronously create or update a stored conversation.
+
+        Async version of :meth:`save_conversation`.
+
+        Args:
+            conversation: Conversation whose state should be persisted.
+
+        Returns:
+            The stored Django conversation.
+        """
+        instance, _ = await self.aupdate_or_create(
+            conversation_id=conversation.conversation_id,
+            defaults=self._get_conversation_defaults(conversation),
+        )
+        return instance
 
 
 class Conversation(models.Model):
