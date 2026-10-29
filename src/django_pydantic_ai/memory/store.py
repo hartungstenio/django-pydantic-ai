@@ -294,7 +294,7 @@ class DjangoModelStore:
             .filter(directory=self.directory)
             .order_by("path")[: max_files + 1]
         ]
-        result = lexical_search(
+        result = await lexical_search(
             [(file.path, file.content[:max_file_chars]) for file in files],
             query,
             limit=limit,
