@@ -74,21 +74,19 @@ The `Memory` capability injects the main memory notebook into agent context and 
 
 ## Persist Conversations
 
-The conversations app stores the JSON representation of a Pydantic AI `Conversation`. Use `ConversationTypeAdapter` to prepare an instance for storage, and retrieve it by its conversation ID:
+The conversations app stores Pydantic AI `Conversation` objects and retrieves them by conversation ID:
 
 ```python
-from pydantic_ai.conversation import ConversationTypeAdapter
-
 from django_pydantic_ai.conversations.models import Conversation
 
 conversation = result.conversation
-conversation_data = ConversationTypeAdapter.dump_python(conversation, mode="json")
-usage = conversation_data.pop("usage")
-stored_conversation = Conversation.objects.create(**conversation_data, **usage)
+stored_conversation = Conversation.objects.save_conversation(conversation)
 restored_conversation = Conversation.objects.get_conversation(conversation.conversation_id)
 ```
 
 Token counters and other stable usage values are stored in individual columns, so they can be read directly (`stored_conversation.input_tokens`) or queried in the database (`Conversation.objects.filter(input_tokens__gte=1000)`). Additional usage details remain in a JSON field. The manager reconstructs the complete Pydantic AI `Conversation` with its accumulated usage.
+
+`save_conversation` creates or updates the row by `conversation_id` and returns the stored instance. In async code, use `await Conversation.objects.asave_conversation(conversation)`.
 
 ## Store Behavior
 
