@@ -27,8 +27,8 @@ classifiers = [
 dependencies = [
   "django (>=6.1)",
   "django-stubs-ext (>=6.1)",
-  "pydantic-ai-harness",
-  "pydantic-ai-slim",
+  "pydantic-ai-harness (>=0.60)",
+  "pydantic-ai-slim (>= 2.60)",
 ]
 dynamic = ["version"]
 
