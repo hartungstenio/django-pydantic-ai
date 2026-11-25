@@ -27,9 +27,16 @@ class ConversationManager(models.Manager["Conversation"]):
         """
         serialized = ConversationTypeAdapter.dump_python(conversation, mode="json")
         model_field_names = {field.name for field in self.model._meta.concrete_fields}
+        usage_data = serialized["usage"]
+        dataclass_usage_field_names = {field.name for field in fields(RunUsage)}
         defaults: dict[str, object] = {
             "messages": serialized["messages"],
             "deferred_tool_requests": serialized["deferred_tool_requests"],
+            "revision": serialized.get("revision"),
+            "new_message_index": serialized.get("new_message_index"),
+            "usage_extra": {
+                name: value for name, value in usage_data.items() if name not in dataclass_usage_field_names
+            },
         }
         for field in fields(RunUsage):
             if field.name in model_field_names:
@@ -51,18 +58,17 @@ class ConversationManager(models.Manager["Conversation"]):
         """
         instance = self.get_queryset().get(conversation_id=conversation_id)
         model_field_names = {field.name for field in instance._meta.concrete_fields}
+        usage_fields = {
+            field.name: getattr(instance, field.name) for field in fields(RunUsage) if field.name in model_field_names
+        }
         return ConversationTypeAdapter.validate_python(
             {
                 "messages": instance.messages,
-                "usage": RunUsage(
-                    **{
-                        field.name: getattr(instance, field.name)
-                        for field in fields(RunUsage)
-                        if field.name in model_field_names
-                    }
-                ),
+                "usage": RunUsage(**usage_fields, **instance.usage_extra),
                 "conversation_id": instance.conversation_id,
                 "deferred_tool_requests": instance.deferred_tool_requests,
+                "revision": instance.revision or None,
+                "new_message_index": instance.new_message_index,
             }
         )
 
@@ -212,6 +218,28 @@ class Conversation(models.Model):
         verbose_name=_("deferred tool requests"),
         help_text=_("JSON-serialized tool requests awaiting a result, if any."),
         db_comment="JSON-serialized tool requests awaiting a result, if any.",
+    )
+    revision = models.TextField(  # noqa: DJ001
+        default=None,
+        null=True,
+        blank=True,
+        verbose_name=_("conversation revision"),
+        help_text=_("Opaque revision of the stored conversation copy."),
+        db_comment="Opaque revision of the stored conversation copy.",
+    )
+    new_message_index = models.PositiveBigIntegerField(
+        default=None,
+        null=True,
+        blank=True,
+        verbose_name=_("new message index"),
+        help_text=_("Index from which the conversation contains new messages."),
+        db_comment="Index from which the conversation contains new messages.",
+    )
+    usage_extra = models.JSONField(
+        default=dict,
+        verbose_name=_("additional usage fields"),
+        help_text=_("Additional usage fields reported by newer Pydantic AI versions."),
+        db_comment="Additional usage fields reported by newer Pydantic AI versions.",
     )
 
     objects = ConversationManager()

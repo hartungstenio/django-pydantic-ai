@@ -151,9 +151,10 @@ class Receipt(models.Model):
         help_text=_("Fingerprint of the arguments associated with this operation ID."),
         db_comment="Fingerprint used to detect reuse of an operation ID with different arguments.",
     )
-    version = models.CharField(
+    version = models.CharField(  # noqa: DJ001
         max_length=64,
         blank=True,
+        null=True,
         verbose_name=_("version"),
         help_text=_("Version value assigned to the memory mutation, or null for deletes."),
         db_comment="Version value assigned to the memory mutation, or null for deletes.",
