@@ -9,6 +9,8 @@ Use Django as a persistent backend for [Pydantic AI](https://ai.pydantic.dev/) a
 
 - Python 3.12 or newer
 - Django 6.1 or newer
+- Pydantic AI 2.74 or newer
+- Pydantic AI Harness 0.74 or newer
 
 ## Table of Contents
 

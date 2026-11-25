@@ -48,12 +48,20 @@ class TestConversationManager:
 
     @pytest.mark.django_db
     def test_save_conversation_creates_and_updates_record(self) -> None:
-        initial = PydanticConversation(conversation_id="save-sync", usage=RunUsage(input_tokens=10))
+        initial = PydanticConversation(
+            conversation_id="save-sync",
+            usage=RunUsage(input_tokens=10),
+            revision="revision-1",
+            new_message_index=1,
+        )
+        initial.usage.future_usage_field = 7
         stored = Conversation.objects.save_conversation(initial)
+        restored_initial = Conversation.objects.get_conversation("save-sync")
 
         updated = PydanticConversation(conversation_id="save-sync", usage=RunUsage(input_tokens=20))
         updated_stored = Conversation.objects.save_conversation(updated)
 
+        assert restored_initial == initial
         assert updated_stored.pk == stored.pk
         assert updated_stored.input_tokens == updated.usage.input_tokens
         assert Conversation.objects.count() == 1
